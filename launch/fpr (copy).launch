@@ -1,0 +1,54 @@
+<launch>
+
+  <node pkg="Project1" type="Project1_node" name="Project1" output="screen">
+	launch-prefix="xterm -e gdb --args"
+	<param name="base_frame" value="/world" />
+	<param name="max_range" value="4.5" />
+	<param name="stepX" value="0.05"/>
+	<param name="stepY" value="0.05"/>
+	<param name="hgh_min_dist" value="100"/>
+	<param name="hgh_min_radius" value="1.5"/>
+	<param name="hgh_max_radius" value="15"/>
+	<param name="hgh_dp" value="1"/>
+	<param name="hgh_param1" value="400"/>
+	<param name="hgh_param2" value="14"/>
+	<param name="HoughLimit" value="6000"/>
+	<param name="nb_points_est" value="100" />
+	<param name="n_a" value="21" />
+	<param name="a_min" value="-1.0" />
+	<param name="a_max" value="1.0" />
+	<param name="n_b" value="21" />
+	<param name="b_min" value="-1.0" />
+	<param name="b_max" value="1.0" />
+	<param name="n_c" value="21" />
+	<param name="c_min" value="-1.0" />
+	<param name="c_max" value="1.0" />
+
+	<param name="p_T_NT" value="0." />
+	<param name="p_NT_NT" value="1." />
+	<param name="p_O_NT" value="0." />
+	
+	<param name="p_NT_T" value="0" />
+	<param name="p_T_T" value="1." />
+	<param name="p_O_T" value="0" />
+	
+	<param name="p_NT_O" value="0" />
+	<param name="p_T_O" value="0" />
+	<param name="p_O_O" value="1." />
+	
+	<param name="p_T_U"  value="0.85" />
+	<param name="p_NT_U" value="0.10" />
+	<param name="p_O_U" value="0.05" />
+
+	<param name="z_MIN2" value="-0.7" />
+	<param name="z_MAX2" value="0.7" />
+	<param name="A_t" value="1.0" />
+	<param name="B_t" value="0.0" />
+	<param name="C_t" value="1.0" />
+	<param name="Q_t" value="0.5" />
+	<param name="R_t" value="0.5" />
+	<param name="sigma_t0" value="0.07" />
+
+      <remap from="/Project1/scans" to="/vrep/depthSensor"/>
+  </node>
+</launch>
