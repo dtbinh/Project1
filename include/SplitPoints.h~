@@ -24,6 +24,7 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <Eigen/Core>
+#include "../include/planeRegression.h"
 #include <vector>
 #include <map>
 

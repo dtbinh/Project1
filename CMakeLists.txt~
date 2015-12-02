@@ -155,7 +155,12 @@ add_definitions( -O3 -g -ggdb -Wall -std=c++11 -fpermissive)
 add_executable(
 	Project1_node 
 	src/main.cpp  
+	src/Accumulator.cpp 
 	src/SplitPoints.cpp
+	src/floorLinearRegression.cpp
+	src/floorRansac.cpp
+	src/floorHeight.cpp
+	src/circleRansac.cpp
 	)
 
 ## Add cmake target dependencies of the executable

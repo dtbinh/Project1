@@ -64,7 +64,8 @@ MatrixAccumulator::MatrixAccumulator(): n("~") {
 	// Make sure TF is ready
 	ros::Duration(1).sleep();
 
-	sub = n.subscribe("/vrep/depthSensor", 1, &MatrixAccumulator::splitPointsCallback, this);
+	//~ sub = n.subscribe("/vrep/depthSensor", 1, &MatrixAccumulator::splitPointsCallback, this);
+	sub = n.subscribe("/vrep/hokuyoSensor", 1, &MatrixAccumulator::splitPointsCallback, this);
 	marker_plane_pub_ = n.advertise<visualization_msgs::MarkerArray>("floor_plane",1);
 	marker_cylinder_pub_ = n.advertise<visualization_msgs::MarkerArray>("floor_cylinder",1);
 
@@ -119,7 +120,7 @@ double MatrixAccumulator::p_Zt_Xt(int Zt, int Xt){
 
 void MatrixAccumulator::setColorImgHeight( cv::Mat imgResHeight, int u, int v, double z ){
 		
-	double z_MIN2 = -0.001;
+	double z_MIN2 = -0.05;
 	double z_MAX2 = 0.7;
 	double rangeZMid = (z_MAX2 - z_MIN2)/2.0;
 	double stepColor = 400 / rangeZMid;
@@ -218,7 +219,8 @@ void MatrixAccumulator::splitPointsCallback(const sensor_msgs::PointCloud2ConstP
 	// Make sure the point cloud is in the base-frame
 	listener_.waitForTransform(base_frame_,msg->header.frame_id,msg->header.stamp,ros::Duration(1.0));
 	pcl_ros::transformPointCloud(base_frame_,msg->header.stamp, temp, msg->header.frame_id, lastpc_, listener_);
-	pcl_ros::transformPointCloud("/kinect_visionSensor", msg->header.stamp, temp, msg->header.frame_id, lastpcBBR_, listener_);
+	//~ pcl_ros::transformPointCloud("/kinect_visionSensor", msg->header.stamp, temp, msg->header.frame_id, lastpcBBR_, listener_);
+	pcl_ros::transformPointCloud("/Hokuyo", msg->header.stamp, temp, msg->header.frame_id, lastpcBBR_, listener_);
 
 	mArray.markers.clear();
 	unsigned int n = temp.size();
