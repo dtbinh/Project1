@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../include/HeightEstimator.h"
 #include "../include/SplitPoints.h"
+
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -15,12 +17,13 @@
 #include <vector>
 
 
-int main(int argc, char **argv){
-	
+int main(int argc, char **argv)
+{	
 	ros::init(argc, argv, "Project1");
 	
-	MatrixAccumulator M;
-	
+	HeightEstimator H;
+	MatrixAccumulator M;	
+
 	ros::spin();
 	return 0;
 }

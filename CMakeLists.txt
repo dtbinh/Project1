@@ -156,6 +156,8 @@ add_executable(
 	Project1_node 
 	src/main.cpp  
 	src/SplitPoints.cpp
+	src/HeightEstimator.cpp
+	src/floorHeight.cpp
 	)
 
 ## Add cmake target dependencies of the executable

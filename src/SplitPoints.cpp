@@ -4,7 +4,6 @@ static float H_THRES = 0.05;
 static int W_OBST_MAX = 30;
 
 MatrixAccumulator::MatrixAccumulator(): n("~") {
-
 	n.param("base_frame",base_frame_,std::string("/world"));
 	n.param("max_range",max_range_,5.0);
 	n.param("nb_points_est", nb_points_est_, 100);
