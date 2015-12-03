@@ -4,7 +4,6 @@ static float H_THRES = 0.05;
 static int W_OBST_MAX = 30;
 
 MatrixAccumulator::MatrixAccumulator(): n("~") {
-
 	n.param("base_frame",base_frame_,std::string("/world"));
 	n.param("max_range",max_range_,5.0);
 	n.param("nb_points_est", nb_points_est_, 100);
@@ -49,7 +48,7 @@ void MatrixAccumulator::splitPointsCallback(const sensor_msgs::PointCloud2ConstP
 			int count = 0;
 			ROS_INFO("----------------------------------------");
 			ROS_INFO("Begin of potential obstacle at %d", zmax);
-			while (lastpc_[i].z > 0.02 && i > 0 && count < W_OBST_MAX) 
+			while (lastpc_[i].z > 0.0 && i > 0 && count < W_OBST_MAX) 
 			{
 				i--;
 				count ++;
