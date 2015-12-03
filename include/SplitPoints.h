@@ -51,6 +51,7 @@ class MatrixAccumulator{
         MatrixAccumulator();
         virtual ~MatrixAccumulator();	
 	void splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr);
+	double MatrixAccumulator::normV(pcl::PointXYZ pt1, pcl::PointXYZ pt2 );
 		
     protected:
 	
@@ -59,6 +60,9 @@ class MatrixAccumulator{
 	std::string base_frame_;
 	double max_range_;
 	int nb_points_est_;
+	
+	double W_OBST_MAX2;
+	double distance_secu;
 	
 	// Parameter of Hough
 	int hgh_dp;
@@ -78,6 +82,8 @@ class MatrixAccumulator{
 	ros::Publisher marker_cylinder_pub_;
 
 	ros::Publisher arm_cmd_pub;
+	ros::Publisher armPos_cmd_pub;
+	ros::Publisher armTwist_cmd_pub;
 	
 	tf::TransformListener listener_;
 	pcl::PointCloud<pcl::PointXYZ> lastpc_;
