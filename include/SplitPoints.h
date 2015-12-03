@@ -49,21 +49,13 @@
 class MatrixAccumulator{
     public:
         MatrixAccumulator();
-        virtual ~MatrixAccumulator();
-		
-		double p_Zt_Xt(int Zt, int Xt);
-		void setColorImgHeight( cv::Mat imgResHeight, int u, int v, double z );
-		void setColorImgSigma( cv::Mat imgResSigma, int u, int v, double z );
-		void setColorImgError( cv::Mat imgResError, int u, int v, double z );
-		void splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr);
+        virtual ~MatrixAccumulator();	
+	void splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr);
 		
     protected:
 	
     private:	
-	
-	int countBeforeHough;
-	int houghLimit;
-	
+
 	std::string base_frame_;
 	double max_range_;
 	int nb_points_est_;
@@ -76,28 +68,6 @@ class MatrixAccumulator{
 	int hgh_min_radius;
 	int hgh_max_radius;
 
-	// Parameters Estimation of the Statut
-	double p_T_NT;
-	double p_NT_NT;
-	double p_O_NT;
-
-	double p_T_T;
-	double p_NT_T;
-	double p_O_T;
-
-	double p_T_O;
-	double p_NT_O;
-	double p_O_O;
-
-	double p_T_U;
-	double p_NT_U;
-	double p_O_U;
-	
-	// Parameters Estimation Heightd
-	double A_t, B_t, C_t; // State
-	double R_t, Q_t; // Noise
-	double sigma_t0; // Initial value of the gaussian variable of the height
-	
 	double stepX, stepY;
 	int nbX; 
 	int nbY; 
@@ -106,6 +76,8 @@ class MatrixAccumulator{
 	ros::Subscriber sub;
 	ros::Publisher marker_plane_pub_;
 	ros::Publisher marker_cylinder_pub_;
+
+	ros::Publisher arm_cmd_pub;
 	
 	tf::TransformListener listener_;
 	pcl::PointCloud<pcl::PointXYZ> lastpc_;

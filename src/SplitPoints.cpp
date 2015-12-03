@@ -1,6 +1,7 @@
 #include "../include/SplitPoints.h"
 
-static float H_THRES = 0.01;
+static float H_THRES = 0.05;
+static int W_OBST_MAX = 30;
 
 MatrixAccumulator::MatrixAccumulator(): n("~") {
 
@@ -12,7 +13,6 @@ MatrixAccumulator::MatrixAccumulator(): n("~") {
 	n.param("stepY", stepY, 0.1);
 	nbX = (int)floor((maxX - minX)/stepX);
 	nbY = (int)floor((maxY - minY)/stepY);
-	ROS_INFO("%d", nbY);
 	
 	// Make sure TF is ready
 	ros::Duration(1).sleep();
@@ -21,29 +21,9 @@ MatrixAccumulator::MatrixAccumulator(): n("~") {
 	sub = n.subscribe("/vrep/hokuyoSensor", 1, &MatrixAccumulator::splitPointsCallback, this);
 	marker_plane_pub_ = n.advertise<visualization_msgs::MarkerArray>("floor_plane",1);
 	marker_cylinder_pub_ = n.advertise<visualization_msgs::MarkerArray>("floor_cylinder",1);
-
-	//OpenCV image initialization
- 	cv::Mat imgR(nbX, nbY, CV_8UC3, cv::Scalar(0,0,0));
-	cv::Mat imgR2(nbX, nbY, CV_8UC3, cv::Scalar(0,0,0));
-	cv::Mat imgR3(nbX, nbY, CV_8UC3, cv::Scalar(0,0,0));
-	cv::Mat imgR4(nbX, nbY, CV_8UC3, cv::Scalar(0,0,0));
-	cv::Mat imgR5(nbX, nbY, CV_8UC3, cv::Scalar(0,0,0));
-	imgResTrav = imgR;
-	imgResNonTrav = imgR2;
-	imgResHeight = imgR3;
-	imgResSigma = imgR4;
-	imgResError = imgR5;
-
-	//Image publisher initialization
-	ros::NodeHandle(nh);
-	image_transport::ImageTransport it(nh);
-	image_transport::ImageTransport it2(nh);
-	image_transport::ImageTransport it3(nh);
-	image_transport::ImageTransport it4(nh);
-	imgPub4 = it4.advertise("imageErr", 1);
-	imgPub3 = it3.advertise("imageSig", 1);
-	imgPub2 = it2.advertise("imageHei", 1);
-	imgPub = it.advertise("imageNav", 1);
+	
+	// Arm command publisher
+	arm_cmd_pub = n.advertise<geometry_msgs::PointStamped>("/arm_ik/position_stamped", 1000);
 
 	ROS_INFO("-------------- Ready ----------------");
 }
@@ -58,31 +38,55 @@ void MatrixAccumulator::splitPointsCallback(const sensor_msgs::PointCloud2ConstP
 	// Make sure the point cloud is in the base-frame
 	listener_.waitForTransform(base_frame_,msg->header.frame_id,msg->header.stamp,ros::Duration(1.0));
 	pcl_ros::transformPointCloud(base_frame_,msg->header.stamp, temp, msg->header.frame_id, lastpc_, listener_);
-	pcl_ros::transformPointCloud("/Hokuyo", msg->header.stamp, temp, msg->header.frame_id, lastpcBBR_, listener_);
-
-	mArray.markers.clear();
+	pcl_ros::transformPointCloud("/VSV/ArmPan", msg->header.stamp, temp, msg->header.frame_id, lastpcBBR_, listener_);
 	unsigned int n = temp.size();
-	std::vector<size_t> pidx;
 
 	for (int i=n-1; i>=0; i--) {	
 		if(lastpc_[i].z > H_THRES)
 		{
-			ROS_INFO("Begin of potential obstacle at %d", i);
-			while (lastpc_[i].z > 0.00 && i > 0) i--;
-			if (i == 0) 
+			int zmax = i;
+			float h_to_avoid = 0.0;
+			int count = 0;
+			ROS_INFO("----------------------------------------");
+			ROS_INFO("Begin of potential obstacle at %d", zmax);
+			while (lastpc_[i].z > 0.02 && i > 0 && count < W_OBST_MAX) 
 			{
-				ROS_INFO("%0.2f %0.2f %0.2f %d", lastpc_[i].x, lastpc_[i].y, lastpc_[i].z, i);
-				ROS_INFO("%0.2f %0.2f %0.2f %d", lastpcBBR_[i].x, lastpcBBR_[i].y, lastpcBBR_[i].z, i);
+				i--;
+				count ++;
+				h_to_avoid = std::max(h_to_avoid, lastpc_[i].z);
+			}
+			if (count == W_OBST_MAX) 
+			{
+				if(i == 0 || abs(lastpc_[zmax].x) > maxX || abs(lastpc_[zmax].y) > maxY) 
+				{
+					ROS_INFO("Only water this time !");
+					break;
+				}
+				
+				ROS_INFO("Was not an obstacle, publishing command");
+
+				// Some info about the point in different tf's
+				ROS_INFO("%0.2f %0.2f %0.2f %d", lastpc_[zmax].x, lastpc_[zmax].y, lastpc_[zmax].z, zmax);
+				//ROS_INFO("%0.2f %0.2f %0.2f %d", temp[zmax].x, temp[zmax].y, temp[zmax].z, zmax);
+				//ROS_INFO("%0.2f %0.2f %0.2f %d", lastpcBBR_[zmax].x, lastpcBBR_[zmax].y, lastpcBBR_[zmax].z, zmax);
+
+				geometry_msgs::PointStamped cmd;
+				cmd.header.frame_id = "/world";
+				cmd.point.x = lastpc_[zmax].x;
+				cmd.point.y = lastpc_[zmax].y;
+				cmd.point.z = lastpc_[zmax].z;
+				arm_cmd_pub.publish(cmd);
+
 				break;
 			}
 			else 
 			{
-				ROS_INFO("End of obstacle at %d", i);				
+				ROS_INFO("End of obstacle found at %d", i);				
 				continue;
 			}
 		}
-		
 	}
+	
 }
 
 
