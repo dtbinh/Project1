@@ -18,7 +18,9 @@
 int main(int argc, char **argv){
 	
 	ros::init(argc, argv, "Project1");
-
+	
+	MatrixAccumulator M;
+	
 	ros::spin();
 	return 0;
 }
