@@ -24,8 +24,8 @@ class HeightEstimator{
 	double stepX, stepY;
 	int nbX, nbY;
 
-	int centerX;
-	int centerY;
+	int centerX = nbX/2;
+	int centerY = nbY/2;
 	
 	ros::Subscriber sub;
 	ros::Publisher marker_plane_pub_;
