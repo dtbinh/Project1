@@ -9,6 +9,7 @@ class HeightEstimator{
 	void setColorImgSigma( cv::Mat imgResSigma, int u, int v, double z );
 	void setColorImgError( cv::Mat imgResError, int u, int v, double z );
 	void splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr);
+	void HeightEstimator::setColor(double, double, double, int, int, cv::Mat);
 
     protected:
     private:	

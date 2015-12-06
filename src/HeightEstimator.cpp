@@ -3,8 +3,12 @@
 
 static int cpt = 0;
 static double MARGIN = 0.1;
+static double RANGE = 2;
+static int SQUARE_SIZE = 25;
+static double RANGE_OBJ = 1.0;
 
-void setColor(double z_max, double z_min, double z, int x, int y, cv::Mat img)
+
+void HeightEstimator::setColor(double z_max, double z_min, double z, int x, int y, cv::Mat img)
 {
 	double rangeZMid = (z_max - z_min) * 0.5;
 	double stepColor = 400 / rangeZMid;
@@ -16,8 +20,8 @@ void setColor(double z_max, double z_min, double z, int x, int y, cv::Mat img)
 
 	double d = hypot(x - centerX, y - centerY);
 	double h = (d != 0) ? (1 - MARGIN / d) : 1;
-	u = floor(centerX + h*(x-centerX));
-	v = floor(centerY + h*(y-centerY));	
+	int u = floor(centerX + h*(x-centerX));
+	int v = floor(centerY + h*(y-centerY));	
 
 	/*
 	* END UPDATE
@@ -94,10 +98,19 @@ void HeightEstimator::setColorImgHeight( cv::Mat imgResHeight, int u, int v, dou
 }
 
 void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr msg){
+
+	// GET A POINT IN THE LAKE (FIRST POSITION OF THE ROBOT)
 	if (cpt == 0)
 	{
-		//centerX = 
-		//centerY =
+		geometry_msgs::PointStamped dummy, center;
+		dummy.header.frame_id = "/BubbleRob";
+		dummy.header.stamp = ros::Time::now();
+		dummy.point.x = 0;
+		dummy.point.y = 0;
+		dummy.point.z = 0;
+		transformPoint("/world", dummy.header.frame_id, dummy, center);
+		centerX = center.point.x;
+		centerY = center.point.y;
 		cpt++; 
 	}
 
@@ -135,7 +148,7 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 		if(tab[{u,v}].size() < (unsigned) nb_points_est_) continue;
 
 		/****************************************************/
-		/**********  Get proprieties of this cell  **********/
+		/**********  Get properties of this cell  **********/
 		/****************************************************/			
 		floorHeight(tab[{u,v}], newCellData);
 		if(mapHeight.count({u,v}) == 0)
@@ -150,7 +163,7 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 		}		
 
 		/*******************************************************/
-		/**********  Update proprieties of this cell  **********/
+		/**********  Update properties of this cell  **********/
 		/*******************************************************/
 		double mu_b_t = A_t * (mapHeight[{u,v}])[4]; // A*mu_tm1 + B_t*u_t =  A*mu_tm1
 		double sigma_b_t = A_t*A_t * (mapHeight[{u,v}])[5]  + R_t; // A*sigma_tm1*A + R_t
@@ -173,6 +186,111 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 	
 		tab[{u,v}].clear();
 	}
+	
+	// GET A LINE TO SEE IN FRONT OF THE ROBOT
+	geometry_msgs::PointStamped dummy, p1, p2;
+	dummy.header.frame_id = "/VSV/platform";
+	dummy.header.stamp = ros::Time::now();
+	dummy.point.x = 0;
+	dummy.point.y = 0;
+	dummy.point.z = 0;
+	transformPoint("/world", dummy.header.frame_id, dummy, p1);
+	dummy.point.x = 0.1;
+	transformPoint("/world", dummy.header.frame_id, dummy, p2);
+
+	double a = (p1.point.y - p2.point.y) / (p1.point.x - p2.point.x);
+	int b = p1.point.y - a*p1.point.x;
+	int cpt = 0;
+	do
+	{
+		int u = (int) floor((cpt - minX)/stepX);
+		int v = (int) floor((a*cpt + b - minY)/stepY);
+		if(hypot(cpt - p1.point.x, a*cpt + b - p1.point.x) < RANGE)
+			if((img.at<cv::Vec3b>(u, v))[1] != 0) break;
+			else continue;
+	}
+	while((u < maxX && v < maxY))
+
+	if(!(u < maxX && v < maxY))
+	{
+
+
+		vector<pcl::PointXY> Tang;
+		double tangCoeff[2];
+		for(int cptX = 0 ; cptX < SQUARE_SIZE ; cptX++)
+		{
+			for(int cptY = 0 ; cptY < SQUARE_SIZE ; cptY++)
+			{
+				if(u + cptX >= maxX || u - cptX <= minX || v + cptY >= maxY || v - cptY <= minY)
+					continue;
+				if((img.at<cv::Vec3b>(u + cptX, v + cptY))[1] != 0)
+					Tang.push_back(PointXY(u + cptX, v - cptY));
+				if((img.at<cv::Vec3b>(u + cptX, v + cptY))[1] != 0)
+					Tang.push_back(PointXY(u + cptX, v - cptY));
+				if((img.at<cv::Vec3b>(u - cptX, v + cptY))[1] != 0)
+					Tang.push_back(PointXY(u - cptX, v + cptY));
+				if((img.at<cv::Vec3b>(u - cptX, v - cptY))[1] != 0)
+					Tang.push_back(PointXY(u - cptX, v - cptY));
+			}
+		}
+		floorLinearRegression(Tang, tangCoeff);
+	}
+
+
+	Vector3Stamped tangDir, tangDirWorld;
+	tangDirWorld.header.frame_id = "/world";
+	tangDirWorld.header.stamp = ros::Time::now();
+	tangDirWorld.vector.x = tangCoeff[0];
+	tangDirWorld.vector.y = tangCoeff[1];
+	tangDirWorld.vector.z = 0;
+	transformVector("/VSV/platform", tangDirWorld.header.frame_id, tangDirWorld, tangDir);
+	double alpha = acos(tangDir.vector / tangDir.vector.norm());
+
+	
+
+
+
+
+
+
+
+
+
+
+	Vector3Stamped vectDir, vectDirWorld;
+	vectDirWorld.header.frame_id = "/VSV/platform";
+	vectDirWorld.header.stamp = ros::Time::now();
+	vectDirWorld.vector.x = 0;
+	vectDirWorld.vector.y = RANGE_OBJ;
+	vectDirWorld.vector.z = 0;
+	transformVector("/world", vectDirWorld.header.frame_id, vectDirWorld, vectDir);
+
+	Eigen::Vector3f vectNormal;
+	vectNormal << -vectDir.vector.y, vectDir.vector.x, 0.0;
+	vectNormal /= vectNormal.norm();
+	double a = -vectNormal.y;
+	double b =  vectNormal.x;
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+	geometry_msgs::Twist cmd;
+	cmd.twist.linear.x = v_Robot;				
+	cmd.twist.angulat.z = K_1*tan + K_2*alpha;		
+	armTwist_cmd_pub.publish(cmd)
+
+
 	//Display the image
 	cv::imshow("Mapping of the Height", imgResHeight);
 	cv::waitKey(1);
