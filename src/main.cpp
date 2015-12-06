@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 {	
 	ros::init(argc, argv, "Project1");
 	
-	HeightEstimator H;
+	//~ HeightEstimator H;
 	MatrixAccumulator M;	
 
 	ros::spin();

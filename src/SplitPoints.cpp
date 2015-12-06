@@ -1,13 +1,14 @@
 #include "../include/SplitPoints.h"
 
 static float H_THRES = 0.05;
-static int W_OBST_MAX = 30;
 
 MatrixAccumulator::MatrixAccumulator(): n("~") {
 	n.param("base_frame",base_frame_,std::string("/world"));
 	n.param("max_range",max_range_,5.0);
 	n.param("nb_points_est", nb_points_est_, 100);
 	n.param("W_OBST_MAX2", W_OBST_MAX2, 0.7);
+	n.param("thresholdDetector", thresholdDetector, 0.99);
+	
 	
 	n.param("distance_secu", distance_secu, 0.2);
 	
@@ -16,12 +17,16 @@ MatrixAccumulator::MatrixAccumulator(): n("~") {
 	nbX = (int)floor((maxX - minX)/stepX);
 	nbY = (int)floor((maxY - minY)/stepY);
 	
+	
+	pcl::PointXYZ CP(0.0, 0.0, 0.0);
+	currentPosition = CP;
+	
 	// Make sure TF is ready
 	ros::Duration(1).sleep();
 
-	//~ sub = n.subscribe("/vrep/depthSensor", 1, &MatrixAccumulator::splitPointsCallback, this);
 	sub = n.subscribe("/vrep/hokuyoSensor", 1, &MatrixAccumulator::splitPointsCallback, this);
-	marker_plane_pub_ = n.advertise<visualization_msgs::MarkerArray>("floor_plane",1);
+	subDetector = n.subscribe("/vrep/metalDetector", 1, &MatrixAccumulator::DetectorCallback, this);
+	marker_plane_pub_ = n.advertise<visualization_msgs::MarkerArray>("floor_mine",1);
 	marker_cylinder_pub_ = n.advertise<visualization_msgs::MarkerArray>("floor_cylinder",1);
 	
 	// Arm command publisher
@@ -32,6 +37,34 @@ MatrixAccumulator::MatrixAccumulator(): n("~") {
 	ROS_INFO("-------------- Ready ----------------");
 }
 
+void MatrixAccumulator::DetectorCallback(const std_msgs::Float32 msg){
+	
+		if(msg.data >= thresholdDetector){	
+			ROS_INFO("**Probability of Mine, threshold reached : %0.2f", msg.data);
+			nbMine ++;
+			
+			visualization_msgs::Marker m;
+			m.header.stamp = ros::Time::now();
+			m.header.frame_id = "/VSV/ArmPan";//base_frame_;
+			m.ns = "floor_mine";
+			m.id = nbMine;
+			m.type = visualization_msgs::Marker::CYLINDER;
+			m.action = visualization_msgs::Marker::ADD;
+			m.pose.position.x = currentPosition.x;
+			m.pose.position.y = currentPosition.y;
+			m.pose.position.z = currentPosition.z;
+			m.scale.x = 0.2;
+			m.scale.y = 0.2;
+			m.scale.z = 0.05;
+			m.color.a = 0.5;
+			m.color.r = 1.0;
+			m.color.g = 1.0;
+			m.color.b = 0.0;
+			mArray.markers.push_back(m);
+			marker_plane_pub_.publish(mArray);
+		
+		}
+}
 
 MatrixAccumulator::~MatrixAccumulator(){}
 
@@ -60,7 +93,7 @@ void MatrixAccumulator::splitPointsCallback(const sensor_msgs::PointCloud2ConstP
 			int count = 0;
 			ROS_INFO("----------------------------------------");
 			ROS_INFO("Begin of potential obstacle at %d", zmax);
-			while (lastpc_[i].z > 0.0 && i > 0 && count < W_OBST_MAX) //normV(lastpc_[zmax],lastpc_[i]) < W_OBST_MAX2) 
+			while (lastpc_[i].z > 0.0 && i > 0 && normV(lastpc_[zmax],lastpc_[i]) < W_OBST_MAX2)
 			{
 				i--;
 				count ++;
@@ -68,7 +101,7 @@ void MatrixAccumulator::splitPointsCallback(const sensor_msgs::PointCloud2ConstP
 				h_to_avoid2 = std::max(h_to_avoid2, lastpcBBR_[i].z);
 			}
 			ROS_INFO("Number of point tested %d", zmax-i);
-			if (count == W_OBST_MAX) //normV(lastpc_[zmax],lastpc_[i]) >= W_OBST_MAX2) //
+			if (normV(lastpc_[zmax],lastpc_[i]) >= W_OBST_MAX2)
 			{
 				if(i == 0 || abs(lastpc_[zmax].x) > maxX || abs(lastpc_[zmax].y) > maxY) 
 				{
@@ -80,32 +113,17 @@ void MatrixAccumulator::splitPointsCallback(const sensor_msgs::PointCloud2ConstP
 
 				// Some info about the point in different tf's
 				ROS_INFO("%0.2f %0.2f %0.2f %d", lastpc_[zmax].x, lastpc_[zmax].y, lastpc_[zmax].z, zmax);
-				//ROS_INFO("%0.2f %0.2f %0.2f %d", temp[zmax].x, temp[zmax].y, temp[zmax].z, zmax);
-				//ROS_INFO("%0.2f %0.2f %0.2f %d", lastpcBBR_[zmax].x, lastpcBBR_[zmax].y, lastpcBBR_[zmax].z, zmax);
 
 				geometry_msgs::PointStamped cmd;
 				cmd.header.frame_id = "/VSV/ArmPan";
 				cmd.header.stamp = ros::Time::now();
 				cmd.point.x = 0;
 				cmd.point.y = lastpcBBR_[zmax].y;
-				cmd.point.z = h_to_avoid2 + 0.2;//lastpc_[zmax].z+0.2;
+				cmd.point.z = h_to_avoid2 + 0.2;
 				arm_cmd_pub.publish(cmd);
 
-
-				//~ geometry_msgs::Point cmd;
-				//~ cmd.x = lastpcBBR_[zmax].x;
-				//~ cmd.y = 0;
-				//~ cmd.z = h_to_avoid;		
-				//~ armPos_cmd_pub.publish(cmd);
-				
-				
-				//~ float y_goalTo = lastpcBBR_[zmax].y;
-				//~ 
-				//~ geometry_msgs::Twist cmd;
-				//~ cmd.twist.linear.x = lastpc_[zmax].x;				
-				//~ cmd.twist.angulat.z = h_to_avoid;		
-				//~ armTwist_cmd_pub.publish(cmd)
-
+				currentPosition.y = lastpcBBR_[zmax].y;
+				currentPosition.z = lastpcBBR_[zmax].z;
 				break;
 			}
 			else 
