@@ -17,7 +17,8 @@ void HeightEstimator::setColor(double z_max, double z_min, double z, int x, int 
 	* UPDATE FOR PROJECT 3
 	* DON'T WRITE ON (x,y), BUT MARGIN AWAY FROM IT
 	*/
-
+	double centerX, centerY;// *************************WARNING***********************************
+	int u,v;
 	double d = hypot(x - centerX, y - centerY);
 	double h = (d != 0) ? (1 - MARGIN / d) : 1;
 	int u = floor(centerX + h*(x-centerX));

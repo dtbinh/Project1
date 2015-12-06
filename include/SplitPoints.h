@@ -4,8 +4,10 @@ class MatrixAccumulator{
     public:
         MatrixAccumulator();
         virtual ~MatrixAccumulator();	
-	void splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr);
-	double MatrixAccumulator::normV(pcl::PointXYZ pt1, pcl::PointXYZ pt2 );
+		void splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr);
+		void DetectorCallback(const std_msgs::Float32 msg);
+
+		double normV(pcl::PointXYZ pt1, pcl::PointXYZ pt2 );
 		
     protected:
 	
@@ -31,7 +33,14 @@ class MatrixAccumulator{
 	int nbY; 
 	//int dims[2] = {nbX,nbY};
 	
+	// Detector
+	pcl::PointXYZ currentPosition;
+	int nbMine = 0;
+	double thresholdDetector;
+	
+	
 	ros::Subscriber sub;
+	ros::Subscriber subDetector;
 	ros::Publisher marker_plane_pub_;
 	ros::Publisher marker_cylinder_pub_;
 
