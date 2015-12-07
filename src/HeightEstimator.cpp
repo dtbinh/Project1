@@ -11,26 +11,13 @@ static float H_THRES = 0.05;
 
 static vector<pair<int, int>> contour;
 
-void HeightEstimator::setColor(double z_max, double z_min, double z, int x, int y, cv::Mat img)
+void HeightEstimator::setColor(double z_max, double z_min, double z, int u, int v, cv::Mat img)
 {
 	double rangeZMid = (z_max - z_min) * 0.5;
 	double stepColor = 400 / rangeZMid;
 
+	(img.at<cv::Vec3b>(u, v))[1] = 253;
 	/*
-	* UPDATE FOR PROJECT 3
-	* DON'T WRITE ON (x,y), BUT MARGIN AWAY FROM IT
-	*/
-	double d = hypot(x - centerX, y - centerY);
-	double h = (d != 0) ? (1 - MARGIN / d) : 1;
-	int u = floor(centerX + h*(x-centerX));
-	int v = floor(centerY + h*(y-centerY));	
-
-	/*
-	* END UPDATE
-	*/
-	
-	ROS_INFO("JE CHANGE DE COULEUR");
-	
 	if(z < z_max && z > z_min)
 	{
 		int redMinus = (z - z_min)* stepColor > 200 ? 200 : redMinus;
@@ -50,7 +37,7 @@ void HeightEstimator::setColor(double z_max, double z_min, double z, int x, int 
 		(img.at<cv::Vec3b>(u, v))[0] = 204;		// B
 		(img.at<cv::Vec3b>(u, v))[1] = 0;		// G
 		(img.at<cv::Vec3b>(u, v))[2] = 204;		// R
-	}
+	}*/
 }
 
 HeightEstimator::HeightEstimator(): n("~") 
@@ -76,9 +63,9 @@ HeightEstimator::HeightEstimator(): n("~")
 	ros::Duration(1).sleep();
 
 	sub = n.subscribe("/vrep/depthSensor", 1, &HeightEstimator::splitPointsCallback, this);
-	marker_plane_pub_ = n.advertise<visualization_msgs::MarkerArray>("floor_plane",1);
+	marker_target_pub_ = n.advertise<visualization_msgs::MarkerArray>("target",1);
 
-	robotTwist_cmd_pub = n.advertise<geometry_msgs::Twist>("/arm_ik/twist", 1000);
+	robotTwist_cmd_pub = n.advertise<geometry_msgs::Twist>("/vsv_driver/twistCommand", 1000);
 
 	//OpenCV image initialization
 	cv::Mat imgR3(nbX, nbY, CV_8UC3, cv::Scalar(0,0,0));
@@ -102,7 +89,7 @@ double HeightEstimator::p_Zt_Xt(int Zt, int Xt)
  
 void HeightEstimator::setColorImgHeight( cv::Mat imgResHeight, int u, int v, double z )
 {
-	setColor(0.7, -0.7, z, u, v, imgResHeight);		
+	setColor(0.7, -0.01, z, u, v, imgResHeight);		
 }
 
 void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr msg){
@@ -116,7 +103,6 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 	pcl_ros::transformPointCloud(base_frame_,msg->header.stamp, temp, msg->header.frame_id, lastpc_, listener_);
 	pcl_ros::transformPointCloud("/world", msg->header.stamp, temp, msg->header.frame_id, lastpcBBR_, listener_);
 
-	ROS_INFO("------ 1 -------");
 	geometry_msgs::PointStamped dummy, target;
 	dummy.header.frame_id = "/VSV/platform";
 	dummy.header.stamp = msg->header.stamp; //ros::Time::now();
@@ -126,13 +112,11 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 	listener_.transformPoint("/world", dummy, target);
 	double min_dist = 10000000.0, min_x = 0, min_y = 0;
 	
-	ROS_INFO("------ 2 -------");
 
 	unsigned int n = temp.size();
 	std::vector<size_t> pidx;
 	double newCellData[6]; // z_mean, z_biais, z_min, z_max, mu_tm1, sigma_tm1
-	
-	ROS_INFO("------ taille ------- %d", n);
+	double mu_t=0;
 	for (unsigned int i=0;i<n;i++) 
 	{	
 		/*************************************/
@@ -142,14 +126,11 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 		double d = hypot(T.x,T.y);
 		// In the sensor frame, this point would be inside the camera
 		if (d < 1e-2) continue;
-		//~ ROS_INFO("------ 2.0 ------- %0.2f",lastpc_[i].x);
-		//~ ROS_INFO("------ 2.0 ------- %0.2f",lastpc_[i].y);
 		if(lastpc_[i].x < minX || lastpc_[i].x > maxX) continue;
 		if(lastpc_[i].y < minY || lastpc_[i].y > maxY) continue;
 		d = hypot(lastpcBBR_[i].x, lastpcBBR_[i].y);
 		if (d > max_range_) continue;
 
-			//~ ROS_INFO("------ 2.0 -------");
 		// Compute index of the right accumulator		
 		int u = (int) floor((lastpc_[i].x - minX)/stepX);
 		int v = (int) floor((lastpc_[i].y - minY)/stepY);
@@ -174,14 +155,15 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 			setColorImgHeight(imgResHeight, u, v, newCellData[0]);	
 		}		
 
-		/*******************************************************/
+		/****************************************************
+	robotTwist_cmd_pub = n.advertise<geometry_msgs::Twist>("/vsv_driver***/
 		/**********  Update properties of this cell  **********/
 		/*******************************************************/
 		double mu_b_t = A_t * (mapHeight[{u,v}])[4]; // A*mu_tm1 + B_t*u_t =  A*mu_tm1
 		double sigma_b_t = A_t*A_t * (mapHeight[{u,v}])[5]  + R_t; // A*sigma_tm1*A + R_t
 		
 		double K_t = sigma_b_t * C_t / ( C_t*C_t*sigma_b_t + Q_t);
-		double mu_t = mu_b_t + K_t*(newCellData[0] - C_t*mu_b_t); // mu_b_t + K_t(z_t - C*mu_b_t)
+		mu_t = mu_b_t + K_t*(newCellData[0] - C_t*mu_b_t); // mu_b_t + K_t(z_t - C*mu_b_t)
 		double sigma_t = (1 - K_t*C_t)*sigma_b_t;
 
 		double errorZ = (newCellData[0] - mu_t);
@@ -193,8 +175,7 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 		(mapHeight[{u,v}])[3] = newCellData[3];
 		(mapHeight[{u,v}])[4] = mu_t; 			// mu_tm1
 		(mapHeight[{u,v}])[5] = sigma_t; 		// sigma_tm1
-		(mapHeight[{u,v}])[6] = errorZ; 		// errorZ
-		setColorImgHeight(imgResHeight, u, v, mu_t);						
+		(mapHeight[{u,v}])[6] = errorZ; 		// errorZ				
 	
 		tab[{u,v}].clear();
 		
@@ -216,9 +197,31 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 	
 	int u = min_x;
 	int v = min_y;
+	setColorImgHeight(imgResHeight, u, v, mu_t);		
 	
-	
-	ROS_INFO("------ 3 -------");
+	nbtarget++;
+	visualization_msgs::Marker m;
+	m.header.stamp = ros::Time::now();
+	m.header.frame_id = "world";//base_frame_;
+	m.ns = "target";
+	m.id = nbtarget;
+	m.type = visualization_msgs::Marker::CYLINDER;
+	m.action = visualization_msgs::Marker::ADD;
+	m.pose.position.x = u*stepX + minX;
+	m.pose.position.y = v*stepY + minY;
+	m.pose.position.z = 0;
+	m.scale.x = 0.1;
+	m.scale.y = 0.1;
+	m.scale.z = 0.05;
+	m.color.a = 0.5;
+	m.color.r = 1.0;
+	m.color.g = 1.0;
+	m.color.b = 0.0;
+	mArray.markers.push_back(m);
+	marker_target_pub_.publish(mArray);
+		
+		
+		
 	vector<pcl::PointXY> Tang;
 	double tangCoeff[2];
 	for(int cptX = 0 ; cptX < SQUARE_SIZE ; cptX++)
@@ -265,16 +268,21 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 	listener_.transformVector("/VSV/platform", tangDirWorld, tangDir);
 	double alpha = atan2(tangDirWorld.vector.y,tangDirWorld.vector.x);
 	
-	ROS_INFO("------ 5 -------");
 	
 	double v_Robot = 0.5;
 	double K_1 = 0.5;
 	double K_2 = 0.5;
+	double minW = -3;
+	double maxW = 3;
 	
 	geometry_msgs::Twist cmd;
 	cmd.linear.x = v_Robot;				
 	cmd.angular.z = K_1*(min_dist-RANGE_MIN) + K_2*alpha;
-	ROS_INFO("%lf, %lf", min_dist-RANGE_MIN, alpha);		
+	ROS_INFO("%lf, %lf", min_dist-RANGE_MIN, alpha);	
+	if(cmd.angular.z < minW)
+			cmd.angular.z = minW;
+	if(cmd.angular.z > maxW)
+			cmd.angular.z = maxW;
 	robotTwist_cmd_pub.publish(cmd);
 
 

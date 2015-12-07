@@ -24,6 +24,7 @@ class HeightEstimator{
 	
 	double stepX, stepY;
 	int nbX, nbY;
+	int nbtarget=0;
 
 	int centerX;
 	int centerY;
@@ -31,12 +32,14 @@ class HeightEstimator{
 	ros::Subscriber sub;
 	ros::Publisher marker_plane_pub_;
 	ros::Publisher robotTwist_cmd_pub;
+	ros::Publisher marker_target_pub_;
 	
 	tf::TransformListener listener_;
 	pcl::PointCloud<pcl::PointXYZ> lastpc_;
 	pcl::PointCloud<pcl::PointXYZ> lastpcBBR_;
 	
 	std::map< std::pair<int, int>, std::vector<pcl::PointXYZ> > tab;
+	visualization_msgs::MarkerArray mArray = visualization_msgs::MarkerArray();
 
 	ros::NodeHandle n;
 

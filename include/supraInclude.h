@@ -22,10 +22,10 @@
 #include <map>
 
 
-#define minY -50
-#define maxY 50
-#define minX -50
-#define maxX 50
+#define minY -20
+#define maxY 20
+#define minX -20
+#define maxX 20
 
 #define TRAV_COLOR 64
 #define NONTRAV_COLOR 255
