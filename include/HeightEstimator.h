@@ -9,7 +9,7 @@ class HeightEstimator{
 	void setColorImgSigma( cv::Mat imgResSigma, int u, int v, double z );
 	void setColorImgError( cv::Mat imgResError, int u, int v, double z );
 	void splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr);
-	void HeightEstimator::setColor(double, double, double, int, int, cv::Mat);
+	void setColor(double, double, double, int, int, cv::Mat);
 
     protected:
     private:	
@@ -30,6 +30,7 @@ class HeightEstimator{
 	
 	ros::Subscriber sub;
 	ros::Publisher marker_plane_pub_;
+	ros::Publisher robotTwist_cmd_pub;
 	
 	tf::TransformListener listener_;
 	pcl::PointCloud<pcl::PointXYZ> lastpc_;

@@ -158,6 +158,7 @@ add_executable(
 	src/SplitPoints.cpp
 	src/HeightEstimator.cpp
 	src/floorHeight.cpp
+	src/floorLinearRegression.cpp
 	)
 
 ## Add cmake target dependencies of the executable

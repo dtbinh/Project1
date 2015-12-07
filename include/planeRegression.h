@@ -1,6 +1,5 @@
 #include<ros/ros.h>
-#include<Eigen/Core>
-#include<Eigen/Cholesky>
+#include <Eigen/Dense>
 #include<vector>
 #include<pcl/point_types.h>
 
@@ -16,6 +15,6 @@ void floorRansac(const vector<pcl::PointXYZ>, double*);
 
 void floorHeight(const vector<pcl::PointXYZ>, double*);
 
-void floorLinearRegression(const vector<pcl::PointXYZ>, double*);
+void floorLinearRegression(const vector<pcl::PointXY>, double*);
 
 void circleRansac(const vector<pcl::PointXYZ>, double*);

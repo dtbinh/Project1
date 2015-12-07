@@ -1,6 +1,6 @@
 #include "../include/planeRegression.h"
 
-void floorLinearRegression(const vector<pcl::PointXY> msg, const double* lineCoeff){
+void floorLinearRegression(const vector<pcl::PointXY> msg, double* lineCoeff){
 	size_t n = msg.size();
 	
 	// Eigen is a matrix library. The line below create a 3x3 matrix A,
@@ -15,7 +15,10 @@ void floorLinearRegression(const vector<pcl::PointXY> msg, const double* lineCoe
 		B(i,0) = msg[i].y;		
 	}
 	// Eigen operation on matrices are very natural:
-	Eigen::MatrixXf X = (A.transpose() * A).inverse() * A.transpose() * B;
+	Eigen::MatrixXf X = A.transpose() * A;
+	X = X.inverse();
+	X = X * A.transpose();
+	X = X * B;
 	// ROS_INFO("Extracted floor plane: z = %.2fx + %.2fy + %.2f", X(0),X(1),X(2));
 	 
 	// ax-y+b=0

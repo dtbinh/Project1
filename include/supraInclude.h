@@ -2,6 +2,9 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/Vector3Stamped.h>
 #include <std_msgs/Float32.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
@@ -14,15 +17,15 @@
 #include <cv_bridge/cv_bridge.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
-#include <Eigen/Core>
+//~ #include <Eigen/Core>
 #include <vector>
 #include <map>
 
 
-#define minY -20
-#define maxY 20
-#define minX -20
-#define maxX 20
+#define minY -50
+#define maxY 50
+#define minX -50
+#define maxX 50
 
 #define TRAV_COLOR 64
 #define NONTRAV_COLOR 255

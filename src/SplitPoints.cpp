@@ -34,7 +34,7 @@ MatrixAccumulator::MatrixAccumulator(): n("~") {
 	armPos_cmd_pub = n.advertise<geometry_msgs::Point>("/arm_ik/position", 1000);
 	armTwist_cmd_pub = n.advertise<geometry_msgs::Twist>("/arm_ik/twist", 1000);
 
-	ROS_INFO("-------------- Ready ----------------");
+	ROS_INFO("-------------- Ready : MatrixAccumulator ----------------");
 }
 
 void MatrixAccumulator::DetectorCallback(const std_msgs::Float32 msg){
@@ -91,8 +91,8 @@ void MatrixAccumulator::splitPointsCallback(const sensor_msgs::PointCloud2ConstP
 			float h_to_avoid = 0.0;
 			float h_to_avoid2 = -10.0;
 			int count = 0;
-			ROS_INFO("----------------------------------------");
-			ROS_INFO("Begin of potential obstacle at %d", zmax);
+			//~ ROS_INFO("----------------------------------------");
+			//~ ROS_INFO("Begin of potential obstacle at %d", zmax);
 			while (lastpc_[i].z > 0.0 && i > 0 && normV(lastpc_[zmax],lastpc_[i]) < W_OBST_MAX2)
 			{
 				i--;
@@ -100,19 +100,19 @@ void MatrixAccumulator::splitPointsCallback(const sensor_msgs::PointCloud2ConstP
 				h_to_avoid = std::max(h_to_avoid, lastpc_[i].z);
 				h_to_avoid2 = std::max(h_to_avoid2, lastpcBBR_[i].z);
 			}
-			ROS_INFO("Number of point tested %d", zmax-i);
+			//~ ROS_INFO("Number of point tested %d", zmax-i);
 			if (normV(lastpc_[zmax],lastpc_[i]) >= W_OBST_MAX2)
 			{
 				if(i == 0 || abs(lastpc_[zmax].x) > maxX || abs(lastpc_[zmax].y) > maxY) 
 				{
-					ROS_INFO("Only water this time !");
+					//~ ROS_INFO("Only water this time !");
 					break;
 				}
 				
-				ROS_INFO("Was not an obstacle, publishing command");
+				//~ ROS_INFO("Was not an obstacle, publishing command");
 
 				// Some info about the point in different tf's
-				ROS_INFO("%0.2f %0.2f %0.2f %d", lastpc_[zmax].x, lastpc_[zmax].y, lastpc_[zmax].z, zmax);
+				//~ ROS_INFO("%0.2f %0.2f %0.2f %d", lastpc_[zmax].x, lastpc_[zmax].y, lastpc_[zmax].z, zmax);
 
 				geometry_msgs::PointStamped cmd;
 				cmd.header.frame_id = "/VSV/ArmPan";
@@ -128,7 +128,7 @@ void MatrixAccumulator::splitPointsCallback(const sensor_msgs::PointCloud2ConstP
 			}
 			else 
 			{
-				ROS_INFO("End of obstacle found at %d", i);				
+				//~ ROS_INFO("End of obstacle found at %d", i);				
 				continue;
 			}
 		}

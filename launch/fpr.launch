@@ -3,7 +3,7 @@
 	<node pkg="Project1" type="Project1_node" name="Project1" output="screen">
 		launch-prefix="xterm -e gdb --args"
 		<param name="base_frame" value="/world" />
-		<param name="max_range" value="4.5" />
+		<param name="max_range" value="40.5" />
 		<param name="stepX" value="0.05"/>
 		<param name="stepY" value="0.05"/>
 		<param name="W_OBST_MAX2" value="0.7"/>
