@@ -231,25 +231,25 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 		{
 			if(u + cptX >= nbX || u - cptX <= 0 || v + cptY >= nbY || v - cptY <= 0)
 				continue;
-			if((imgResHeight.at<cv::Vec3b>(u + cptX, v - cptY))[1] != 0)
+			if((mapHeight[{u + cptX, v - cptY}])[0] > H_THRES[1])
 			{				
 				pt_tmp.x = u + cptX;
 				pt_tmp.y = v - cptY;
 				Tang.push_back(pt_tmp);
 			}
-			if((imgResHeight.at<cv::Vec3b>(u + cptX, v + cptY))[1] != 0)
+			if((mapHeight[{u + cptX, v + cptY}])[0] > H_THRES[1])
 			{				
 				pt_tmp.x = u + cptX;
 				pt_tmp.y = v + cptY;
 				Tang.push_back(pt_tmp);
 			}
-			if((imgResHeight.at<cv::Vec3b>(u - cptX, v + cptY))[1] != 0)
+			if((mapHeight[{u - cptX, v - cptY}])[0] > H_THRES[1])
 			{				
 				pt_tmp.x = u - cptX;
 				pt_tmp.y = v + cptY;
 				Tang.push_back(pt_tmp);
 			}
-			if((imgResHeight.at<cv::Vec3b>(u - cptX, v - cptY))[1] != 0)
+			if((mapHeight[{u - cptX, v - cptY}])[0] > H_THRES[1])
 			{				
 				pt_tmp.x = u - cptX;
 				pt_tmp.y = v - cptY;
@@ -287,11 +287,10 @@ void HeightEstimator::splitPointsCallback(const sensor_msgs::PointCloud2ConstPtr
 
 
 	//Display the image
-	cv::imshow("Mapping of the Height", imgResHeight);
+	cv::imshow("Height mapping", imgResHeight);
 	cv::waitKey(1);
 
 	//Build ROS message
-	// imgResROS = cv_bridge::CvImage(std_msgs::Header(), "rgba8", imgResTrav).toImageMsg();
 	imgResROS2 = cv_bridge::CvImage(std_msgs::Header(), "bgr8", imgResHeight).toImageMsg();
 	imgPub2.publish(imgResROS2);
 }
